@@ -14,11 +14,13 @@ export class AuthService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    const exists = await this.repo.findOne({ where: { email: 'alex@example.com' } });
-    if (!exists) {
-      await this.repo.save(
-        this.repo.create({ name: 'Alex Johnson', email: 'alex@example.com', password: 'password', streak: 7, planType: 'pro' }),
-      );
+    const seeds = [
+      { name: 'Admin', email: 'admin@tracker.com', password: 'admin123', streak: 0, planType: 'pro', role: 'admin' as const },
+      { name: 'Alex Johnson', email: 'alex@example.com', password: 'password', streak: 7, planType: 'pro', role: 'user' as const },
+    ];
+    for (const seed of seeds) {
+      const exists = await this.repo.findOne({ where: { email: seed.email } });
+      if (!exists) await this.repo.save(this.repo.create(seed));
     }
   }
 

@@ -19,4 +19,7 @@ export class User {
 
   @Column({ default: 'free' })
   planType: string;
+
+  @Column({ type: 'enum', enum: ['admin', 'user'], default: 'user' })
+  role: 'admin' | 'user';
 }
