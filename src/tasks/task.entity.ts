@@ -1,7 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { TaskCategory } from './task-category.entity.js';
 
-export type Priority = 'high' | 'medium' | 'low';
-export type TaskStatus = 'planned' | 'in-progress' | 'review' | 'completed';
+export type DocumentStatus = 'pending' | 'in-progress' | 'completed' | 'overdue';
 
 @Entity()
 export class Task {
@@ -11,30 +11,47 @@ export class Task {
   @Column()
   title: string;
 
-  @Column({ type: 'enum', enum: ['high', 'medium', 'low'] })
-  priority: Priority;
-
-  @Column({ type: 'enum', enum: ['planned', 'in-progress', 'review', 'completed'], default: 'planned' })
-  status: TaskStatus;
-
   @Column()
-  estimatedMin: number;
+  deadlineDays: number;
 
-  @Column({ nullable: true })
-  actualMin: number;
+  @Column({ type: 'date', nullable: true })
+  startDate: string | null;
 
-  @Column({ type: 'jsonb', default: '[]' })
-  tags: string[];
-
-  @Column()
-  deadline: string;
-
-  @Column({ default: false })
-  timerRunning: boolean;
+  @Column({ type: 'date', nullable: true })
+  endDate: string | null;
 
   @Column({ default: 0 })
-  progress: number;
+  completionPercent: number;
 
-  @Column()
-  assignedDate: string;
+  @Column({
+    type: 'enum',
+    enum: ['pending', 'in-progress', 'completed', 'overdue'],
+    default: 'pending',
+  })
+  status: DocumentStatus;
+
+  @Column({ nullable: true })
+  executorGO: string | null;
+
+  @Column({ nullable: true })
+  executorNurzaman: string | null;
+
+  @Column({ nullable: true })
+  comment: string | null;
+
+  @Column({ default: false })
+  isParallel: boolean;
+
+  @Column({ nullable: true })
+  parallelGroupId: number | null;
+
+  @Column({ type: 'jsonb', default: '[]' })
+  attachments: string[];
+
+  @Column({ default: 0 })
+  orderIndex: number;
+
+  @ManyToOne(() => TaskCategory, cat => cat.tasks, { nullable: true })
+  @JoinColumn()
+  category: TaskCategory | null;
 }

@@ -13,7 +13,7 @@ export class AnalyticsService {
     const tasks = await this.tasksService.findAll();
     const map: Record<string, { completed: number; created: number }> = {};
     for (const task of tasks) {
-      const day = task.assignedDate?.slice(0, 10);
+      const day = task.startDate?.slice(0, 10);
       if (!day) continue;
       map[day] ??= { completed: 0, created: 0 };
       map[day].created++;
@@ -24,14 +24,19 @@ export class AnalyticsService {
 
   async getPlannedVsActual() {
     const tasks = await this.tasksService.findAll();
-    const map: Record<string, { planned: number; actual: number }> = {};
+    const map: Record<string, { plannedDays: number; completionPercent: number; count: number }> = {};
     for (const task of tasks) {
-      const week = task.assignedDate ? `W${isoWeek(task.assignedDate)}` : 'unknown';
-      map[week] ??= { planned: 0, actual: 0 };
-      map[week].planned += task.estimatedMin ?? 0;
-      map[week].actual += task.actualMin ?? 0;
+      const week = task.startDate ? `W${isoWeek(task.startDate)}` : 'unknown';
+      map[week] ??= { plannedDays: 0, completionPercent: 0, count: 0 };
+      map[week].plannedDays += task.deadlineDays ?? 0;
+      map[week].completionPercent += task.completionPercent ?? 0;
+      map[week].count++;
     }
-    return Object.entries(map).map(([week, v]) => ({ week, ...v }));
+    return Object.entries(map).map(([week, v]) => ({
+      week,
+      plannedDays: v.plannedDays,
+      avgCompletion: v.count > 0 ? Math.round(v.completionPercent / v.count) : 0,
+    }));
   }
 
   async getFocusScore() {
@@ -52,7 +57,7 @@ export class AnalyticsService {
     const tasks = await this.tasksService.findAll();
     const map: Record<string, number> = {};
     for (const task of tasks) {
-      const date = task.assignedDate?.slice(0, 10);
+      const date = task.startDate?.slice(0, 10);
       if (!date) continue;
       map[date] = (map[date] ?? 0) + (task.status === 'completed' ? 1 : 0);
     }
@@ -63,8 +68,8 @@ export class AnalyticsService {
     const tasks = await this.tasksService.findAll();
     const map: Record<string, number> = {};
     for (const task of tasks) {
-      const tag = task.tags?.[0] ?? 'Other';
-      map[tag] = (map[tag] ?? 0) + (task.actualMin ?? task.estimatedMin ?? 0);
+      const name = task.category?.name ?? 'Без категории';
+      map[name] = (map[name] ?? 0) + 1;
     }
     return Object.entries(map).map(([name, value]) => ({ name, value }));
   }
