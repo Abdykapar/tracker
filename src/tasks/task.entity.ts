@@ -11,7 +11,7 @@ export class Task {
   @Column()
   title: string;
 
-  @Column()
+  @Column({ default: 0 })
   deadlineDays: number;
 
   @Column({ type: 'date', nullable: true })
@@ -30,19 +30,19 @@ export class Task {
   })
   status: DocumentStatus;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   executorGO: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   executorNurzaman: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   comment: string | null;
 
   @Column({ default: false })
   isParallel: boolean;
 
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   parallelGroupId: number | null;
 
   @Column({ type: 'jsonb', default: '[]' })
