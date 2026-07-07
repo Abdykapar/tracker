@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { TaskCategory } from './task-category.entity.js';
+import { User } from '../auth/user.entity.js';
 
 export type DocumentStatus = 'pending' | 'in-progress' | 'completed' | 'overdue';
 
@@ -54,4 +55,8 @@ export class Task {
   @ManyToOne(() => TaskCategory, cat => cat.tasks, { nullable: true })
   @JoinColumn()
   category: TaskCategory | null;
+
+  @ManyToOne(() => User, { nullable: true, eager: true })
+  @JoinColumn()
+  assignee: User | null;
 }

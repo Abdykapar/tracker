@@ -3,7 +3,7 @@ import {
   Body, Param, Query, ParseIntPipe, HttpCode,
 } from '@nestjs/common';
 import { TasksService } from './tasks.service.js';
-import type { Task, DocumentStatus } from './tasks.service.js';
+import type { CreateTaskDto, UpdateTaskDto, DocumentStatus } from './tasks.service.js';
 
 @Controller('tasks')
 export class TasksController {
@@ -20,12 +20,12 @@ export class TasksController {
   }
 
   @Post()
-  create(@Body() body: Omit<Task, 'id'>) {
+  create(@Body() body: CreateTaskDto) {
     return this.tasksService.create(body);
   }
 
   @Put(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() body: Partial<Omit<Task, 'id' | 'category'>>) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() body: UpdateTaskDto) {
     return this.tasksService.update(id, body);
   }
 

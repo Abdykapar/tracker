@@ -3,7 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike } from 'typeorm';
 import { Task } from './task.entity.js';
 import { TaskCategory } from './task-category.entity.js';
+import { User } from '../auth/user.entity.js';
 import type { DocumentStatus } from './task.entity.js';
+
+export type CreateTaskDto = Omit<Task, 'id' | 'assignee'> & { assigneeId?: number | null };
+export type UpdateTaskDto = Partial<Omit<Task, 'id' | 'category' | 'assignee'>> & { assigneeId?: number | null };
 
 export type { DocumentStatus };
 export { Task };
@@ -66,6 +70,8 @@ export class TasksService implements OnModuleInit {
     private readonly repo: Repository<Task>,
     @InjectRepository(TaskCategory)
     private readonly categoryRepo: Repository<TaskCategory>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
   ) {}
 
   async onModuleInit() {
@@ -108,22 +114,30 @@ export class TasksService implements OnModuleInit {
     return task;
   }
 
-  create(dto: Omit<Task, 'id'>): Promise<Task> {
-    return this.repo.save(this.repo.create(dto));
+  async create(dto: CreateTaskDto): Promise<Task> {
+    const { assigneeId, ...rest } = dto;
+    const assignee = assigneeId != null ? await this.userRepo.findOne({ where: { id: assigneeId } }) : null;
+    return this.repo.save(this.repo.create({ ...rest, assignee }));
   }
 
-  async update(id: number, dto: Partial<Omit<Task, 'id' | 'category'>>): Promise<Task> {
-    if (dto.startDate !== undefined || dto.deadlineDays !== undefined) {
+  async update(id: number, dto: UpdateTaskDto): Promise<Task> {
+    const { assigneeId, ...rest } = dto;
+    if (rest.startDate !== undefined || rest.deadlineDays !== undefined) {
       const current = await this.findOne(id);
-      const startDate = dto.startDate ?? current.startDate;
-      const deadlineDays = dto.deadlineDays ?? current.deadlineDays;
+      const startDate = rest.startDate ?? current.startDate;
+      const deadlineDays = rest.deadlineDays ?? current.deadlineDays;
       if (startDate) {
         const d = new Date(startDate);
         d.setDate(d.getDate() + deadlineDays);
-        dto.endDate = d.toISOString().split('T')[0];
+        rest.endDate = d.toISOString().split('T')[0];
       }
     }
-    await this.repo.update(id, dto);
+    if (assigneeId !== undefined) {
+      const assignee = assigneeId != null ? await this.userRepo.findOne({ where: { id: assigneeId } }) : null;
+      await this.repo.save({ id, ...rest, assignee });
+    } else {
+      await this.repo.update(id, rest);
+    }
     return this.findOne(id);
   }
 
