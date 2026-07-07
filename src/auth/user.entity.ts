@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Role } from '../roles/role.entity.js';
 
 @Entity()
 export class User {
@@ -8,18 +9,16 @@ export class User {
   @Column()
   name: string;
 
+  @Column()
+  surname: string;
+
   @Column({ unique: true })
-  email: string;
+  login: string;
 
   @Column()
   password: string;
 
-  @Column({ default: 0 })
-  streak: number;
-
-  @Column({ default: 'free' })
-  planType: string;
-
-  @Column({ type: 'enum', enum: ['admin', 'user'], default: 'user' })
-  role: 'admin' | 'user';
+  @ManyToOne(() => Role, { nullable: true, eager: true })
+  @JoinColumn()
+  role: Role | null;
 }

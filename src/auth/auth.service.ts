@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { randomUUID } from 'crypto';
 import { User } from './user.entity.js';
+import { Role } from '../roles/role.entity.js';
 
 @Injectable()
 export class AuthService implements OnModuleInit {
@@ -11,21 +12,26 @@ export class AuthService implements OnModuleInit {
   constructor(
     @InjectRepository(User)
     private readonly repo: Repository<User>,
+    @InjectRepository(Role)
+    private readonly roleRepo: Repository<Role>,
   ) {}
 
   async onModuleInit() {
+    const adminRole = await this.roleRepo.findOne({ where: { name: 'admin' } });
+    const userRole = await this.roleRepo.findOne({ where: { name: 'user' } });
+
     const seeds = [
-      { name: 'Admin', email: 'admin@tracker.com', password: 'admin123', streak: 0, planType: 'pro', role: 'admin' as const },
-      { name: 'Alex Johnson', email: 'alex@example.com', password: 'password', streak: 7, planType: 'pro', role: 'user' as const },
+      { name: 'Admin', surname: 'System', login: 'admin', password: 'admin123', role: adminRole },
+      { name: 'Alex', surname: 'Johnson', login: 'alex', password: 'password', role: userRole },
     ];
     for (const seed of seeds) {
-      const exists = await this.repo.findOne({ where: { email: seed.email } });
+      const exists = await this.repo.findOne({ where: { login: seed.login } });
       if (!exists) await this.repo.save(this.repo.create(seed));
     }
   }
 
-  async login(email: string, password: string) {
-    const user = await this.repo.findOne({ where: { email, password } });
+  async login(login: string, password: string) {
+    const user = await this.repo.findOne({ where: { login, password } });
     if (!user) throw new UnauthorizedException('Invalid credentials');
     const token = randomUUID();
     this.tokens.set(token, user.id);
