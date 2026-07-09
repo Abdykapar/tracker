@@ -1,11 +1,12 @@
 import {
   Controller, Get, Post, Put, Patch, Delete,
   Body, Param, Query, ParseIntPipe, HttpCode,
-  UseInterceptors, UploadedFile,
+  UseInterceptors, UploadedFile, Res, NotFoundException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { extname, join } from 'path';
+import type { Response } from 'express';
 import { TasksService } from './tasks.service.js';
 import type { CreateTaskDto, UpdateTaskDto, DocumentStatus } from './tasks.service.js';
 
@@ -58,6 +59,17 @@ export class TasksController {
     @UploadedFile() file: Express.Multer.File,
   ) {
     return this.tasksService.addAttachment(id, file.filename);
+  }
+
+  @Get(':id/attachments/:filename')
+  async downloadAttachment(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('filename') filename: string,
+    @Res() res: Response,
+  ) {
+    const task = await this.tasksService.findOne(id);
+    if (!task.attachments.includes(filename)) throw new NotFoundException('Attachment not found');
+    res.download(join(process.cwd(), 'uploads', filename), filename);
   }
 
   @Delete(':id/attachments/:filename')
