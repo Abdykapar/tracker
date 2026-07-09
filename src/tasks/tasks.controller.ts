@@ -1,7 +1,11 @@
 import {
   Controller, Get, Post, Put, Patch, Delete,
   Body, Param, Query, ParseIntPipe, HttpCode,
+  UseInterceptors, UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { TasksService } from './tasks.service.js';
 import type { CreateTaskDto, UpdateTaskDto, DocumentStatus } from './tasks.service.js';
 
@@ -37,6 +41,32 @@ export class TasksController {
   @Patch(':id/completion')
   updateCompletion(@Param('id', ParseIntPipe) id: number, @Body('completionPercent') completionPercent: number) {
     return this.tasksService.update(id, { completionPercent });
+  }
+
+  @Post(':id/attachments')
+  @UseInterceptors(FileInterceptor('file', {
+    storage: diskStorage({
+      destination: './uploads',
+      filename: (_req, file, cb) => {
+        const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+        cb(null, `${unique}${extname(file.originalname)}`);
+      },
+    }),
+  }))
+  uploadAttachment(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.tasksService.addAttachment(id, file.filename);
+  }
+
+  @Delete(':id/attachments/:filename')
+  @HttpCode(204)
+  removeAttachment(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('filename') filename: string,
+  ) {
+    return this.tasksService.removeAttachment(id, filename);
   }
 
   @Delete(':id')

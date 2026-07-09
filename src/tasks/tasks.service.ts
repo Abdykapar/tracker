@@ -149,4 +149,17 @@ export class TasksService implements OnModuleInit {
   search(q: string): Promise<Task[]> {
     return this.repo.find({ where: { title: ILike(`%${q}%`) }, relations: { category: true } });
   }
+
+  async addAttachment(id: number, filename: string): Promise<Task> {
+    const task = await this.findOne(id);
+    const attachments = [...(task.attachments ?? []), filename];
+    await this.repo.update(id, { attachments });
+    return this.findOne(id);
+  }
+
+  async removeAttachment(id: number, filename: string): Promise<void> {
+    const task = await this.findOne(id);
+    const attachments = (task.attachments ?? []).filter(a => a !== filename);
+    await this.repo.update(id, { attachments });
+  }
 }
