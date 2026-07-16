@@ -103,8 +103,10 @@ export class TasksService implements OnModuleInit {
     }
   }
 
-  findAll(status?: DocumentStatus): Promise<Task[]> {
-    const where = status ? { status } : {};
+  findAll(status?: DocumentStatus, assigneeId?: number): Promise<Task[]> {
+    const where: { status?: DocumentStatus; assignee?: { id: number } } = {};
+    if (status) where.status = status;
+    if (assigneeId) where.assignee = { id: assigneeId };
     return this.repo.find({ where, order: { orderIndex: 'ASC' }, relations: { category: true } });
   }
 

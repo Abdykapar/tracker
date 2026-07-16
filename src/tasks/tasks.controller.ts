@@ -20,8 +20,8 @@ export class TasksController {
   }
 
   @Get()
-  findAll(@Query('status') status?: DocumentStatus) {
-    return this.tasksService.findAll(status);
+  findAll(@Query('status') status?: DocumentStatus, @Query('assigneeId') assigneeId?: string) {
+    return this.tasksService.findAll(status, assigneeId ? Number(assigneeId) : undefined);
   }
 
   @Post()
